@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>MUNCH</title>
+    <!-- link to style sheet -->
+    <link rel="stylesheet" href="/static/stylesheet.css" />
+</head>
+
+<body>
+    {% include 'header.html' %}
+    <div class="content-wrapper">
+        <h2>Update Classroom Name</h2>
+        <form id="updateNameForm" action="/classrooms/update/name" method="post">
+            <input type="hidden" name="classroom_id" value="{{classroom_id}}" />
+            New Classroom Name: <input type="text" name="classroom_name" id="newClassroomName" required /><br />
+            <input type="submit" value="Update Name" />
+        </form>
+
+        <h2>Update Classroom Bio</h2>
+        <form id="updateBioForm" action="/classrooms/update/bio" method="post">
+            <input type="hidden" name="classroom_id" value="{{classroom_id}}" />
+            New Classroom Bio: <input type="text" name="classroom_bio" id="newClassroomBio" /><br />
+            <input type="submit" value="Update Bio" />
+        </form>
+
+        <!-- TODO: add in "add admins" button -->
+
+        <h2>Add users</h2>
+        <form action="/classrooms/users" method="post">
+            <input type="hidden" name="classroom_id" value="{{classroom_id}}" />
+            User IDs (comma-separated):
+            <input type="text" name="user_ids" required /><br />
+            <input type="submit" value="Add users" />
+        </form>
+
+        <h2>Delete Classroom</h2>
+        <form id="deleteClassroomForm" action="/classrooms/delete" method="post">
+            <input type="hidden" name="classroom_id" value="{{classroom_id}}" />
+            <input type="submit" value="Delete Classroom" />
+        </form>
+
+        <br />
+        <a href="/classrooms?classroom_id={{classroom_id}}">Back to classroom</a>
+
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        "use strict";
+        // Update Classroom Name
+        $("#updateNameForm").submit(function (event) {
+            event.preventDefault();
+            var newName = $("#newClassroomName").val();
+            console.log("New Classroom Name:", newName);
+            var formData = $(this).serialize();
+            $.ajax({
+                url: '/classrooms/update/name',
+                type: 'PUT',
+                data: formData,
+                success: function (response) {
+                    if (response.success) {
+                        $("#classroomName").text(newName);
+                    }
+                    alert(response.message);
+                },
+                error: function (xhr, status, error) {
+                    alert("Error updating name: " + xhr.responseText);
+                }
+            });
+        });
+
+        // Update Classroom Bio
+        $("#updateBioForm").submit(function (event) {
+            event.preventDefault();
+            var newBio = $("#newClassroomBio").val();
+
+            var formData = $(this).serialize();
+            $.ajax({
+                url: '/classrooms/update/bio',
+                type: 'PUT',
+                data: formData,
+                success: function (response) {
+                    if (response.success) {
+                        $("#classroomBio").text(newBio);
+                    }
+                    alert(response.message);
+                },
+                error: function (xhr, status, error) {
+                    alert("Error updating bio: " + xhr.responseText);
+                }
+            });
+        });
+
+        // Delete Classroom
+        $("#deleteClassroomForm").submit(function (event) {
+            event.preventDefault();
+            var formData = $(this).serialize();
+            $.ajax({
+                url: '/classrooms/delete',
+                type: 'DELETE',
+                data: formData,
+                success: function (response) {
+                    alert(response.message);
+                    window.location.href = '/index';
+                },
+                error: function (xhr, status, error) {
+                    alert("Error deleting classroom: " + xhr.responseText);
+                }
+            });
+        });
+    </script>
+    {% include 'footer.html' %}
+</body>
+
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>MUNCH</title>
+  <!-- link to style sheet -->
+  <link rel="stylesheet" href="/static/stylesheet.css" />
+</head>
+
+<body>
+  {% include 'header.html' %}
+  <div class="content-wrapper">
+    <h1>{{classroom_info['classroom_name']}}</h1>
+    <title>{{classroom_info['classroom_name']}}</title>
+
+    <div id="classroom info">
+      {{classroom_info['classroom_bio']}}<br />
+    </div>
+
+    {% if is_admin %}
+    <br />
+    <a href="/classrooms/settings?classroom_id={{classroom_id}}">
+      Classroom settings
+    </a>
+    <br />
+    {% endif %}
+
+    <div id="admin table">
+      <h2>Admins:</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in admins %}
+          <tr id="{{user['user_id']}}">
+            <td>
+              <a href="users?user_id={{user['user_id']}}">{{user['user_name']}}</a>
+            </td>
+            <td>{{user['score']}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div id="student table">
+      <h2>Students:</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr id="{{user['user_id']}}">
+            <td>
+              <a href="users?user_id={{user['user_id']}}">{{user['user_name']}}</a>
+            </td>
+            <td>{{user['score']}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <br />
+
+    {% if is_admin %}
+      <a href="/classrooms/admin/match?classroom_id={{classroom_id}}">
+        Current Match
+      </a>
+      <br />
+      <br />
+      <form action="/classrooms/admin/match?classroom_id={{classroom_id}}" method="post">
+        <input type="submit" value="Create new match" />
+      </form>
+
+    {% else %}
+      Current Match:
+      {% if match %}
+        <a href="users?user_id={{match['user_id']}}">{{match['user_name']}}</a>
+      {% else %}
+        No match yet
+      {% endif %}
+
+    {% endif %}
+
+  </div>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script>
+    "use strict";
+    // Update Classroom Name
+    $("#updateNameForm").submit(function (event) {
+      event.preventDefault();
+      var newName = $("#newClassroomName").val();
+      console.log("New Classroom Name:", newName);
+      var formData = $(this).serialize();
+      $.ajax({
+        url: '/classrooms/update/name',
+        type: 'PUT',
+        data: formData,
+        success: function (response) {
+          if (response.success) {
+            $("#classroomName").text(newName);
+          }
+          alert(response.message);
+        },
+        error: function (xhr, status, error) {
+          alert("Error updating name: " + xhr.responseText);
+        }
+      });
+    });
+
+    // Update Classroom Bio
+    $("#updateBioForm").submit(function (event) {
+      event.preventDefault();
+      var newBio = $("#newClassroomBio").val();
+
+      var formData = $(this).serialize();
+      $.ajax({
+        url: '/classrooms/update/bio',
+        type: 'PUT',
+        data: formData,
+        success: function (response) {
+          if (response.success) {
+            $("#classroomBio").text(newBio);
+          }
+          alert(response.message);
+        },
+        error: function (xhr, status, error) {
+          alert("Error updating bio: " + xhr.responseText);
+        }
+      });
+    });
+
+    // Delete Classroom
+    $("#deleteClassroomForm").submit(function (event) {
+      event.preventDefault();
+      var formData = $(this).serialize();
+      $.ajax({
+        url: '/classrooms/delete',
+        type: 'DELETE',
+        data: formData,
+        success: function (response) {
+          alert(response.message);
+        },
+        error: function (xhr, status, error) {
+          alert("Error deleting classroom: " + xhr.responseText);
+        }
+      });
+    });
+  </script>
+  {% include 'footer.html' %}
+</body>
+
+</html>

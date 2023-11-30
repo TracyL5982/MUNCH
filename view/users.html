@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>User Management</title>
+  <link rel="stylesheet" href="/static/stylesheet.css" />
+</head>
+
+<body>
+  {% include 'header.html' %}
+  <!-- Get User Information -->
+  <h2>Search User Information</h2>
+  <form action="/users" method="get">
+    User ID: <input type="text" name="user_id" />
+    <input type="submit" value="Search User" />
+  </form>
+
+  <!-- Create New User -->
+  <h2>Create New User</h2>
+  <form action="/users" method="post">
+    Name: <input type="text" name="name" /><br />
+    Email: <input type="email" name="email" /><br />
+    Phone: <input type="tel" name="phone" /><br />
+    <input type="submit" value="Create User" />
+  </form>
+
+  <!-- Update User Information -->
+  <h2>Update User Name</h2>
+  <form action="/users" method="put">
+    User ID: <input type="text" name="user_id" /><br />
+    Name: <input type="text" name="name" /><br />
+    <input type="submit" value="Update Name" />
+  </form>
+
+  <h2>Update User Email</h2>
+  <form action="/users" method="put">
+    User ID: <input type="text" name="user_id" /><br />
+    Email: <input type="email" name="email" /><br />
+    <input type="submit" value="Update Email" />
+  </form>
+
+  <h2>Update User Phone</h2>
+  <form action="/users" method="put">
+    User ID: <input type="text" name="user_id" /><br />
+    Phone: <input type="tel" name="phone" /><br />
+    <input type="submit" value="Update Phone" />
+  </form>
+
+  <!-- Delete User -->
+  <h2>Delete User</h2>
+  <form action="/users" method="delete">
+    User ID: <input type="text" name="user_id" />
+    <input type="submit" value="Delete User" />
+  </form>
+  {% include 'footer.html' %}
+</body>
+
+</html>

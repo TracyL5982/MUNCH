@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>MUNCH</title>
+    <link rel="stylesheet" href="../static/stylesheet.css" />
+</head>
+
+<body>
+    {% include 'header.html' %}
+    <div class="content-wrapper">
+        <h1>Classrooms</h1>
+        <div class="box">
+            {% for classroom in classrooms %}
+            <div>
+                <a href="classrooms?classroom_id={{classroom[0]}}">{{classroom[1]}}</a>
+                <br />
+                {{classroom[2]}}
+                <br />
+                <br />
+                <a href="classrooms?classroom_id={{classroom[0]}}&user_id={{current_user.user_id}}">Join this
+                    classroom</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <h2>Create classroom</h2>
+        <form action="/classrooms/create" method="post">
+            Admin IDs (comma-separated):
+            <input type="text" name="admin_ids" required /><br />
+            Classroom Name: <input type="text" name="classroom_name" required /><br />
+            Classroom Bio: <input type="text" name="classroom_bio" /><br />
+            <input type="submit" value="Create Classroom" />
+        </form>
+    </div>
+    {% include 'footer.html' %}
+</body>
+
+</html>

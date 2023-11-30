@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>MUNCH</title>
+  <link rel="stylesheet" href="/static/stylesheet.css" />
+</head>
+
+<body>
+  {% include 'header.html' %}
+  <div class="content-wrapper">
+    <h1>Matches</h1>
+    {% if not matches or matches|length == 0 %}
+      There are not enough users to make a match. 
+      You must have at least 2 users before a match is possible.
+    {% else %}
+    <table>
+      <thead>
+        <tr>
+          <th>Person 1</th>
+          <th>Person 2</th>
+          <!-- <th>Person 3 (if needed)</th> -->
+        </tr>
+      </thead>
+      <tbody>
+        {% for match in matches %}
+        <tr>
+          <td>{{match[0]}}</td>
+          <td>{{match[1]}}</td>
+          <!-- <td>
+              {{match[2]}}
+            </td> -->
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+  {% include 'footer.html' %}
+</body>
+
+</html>

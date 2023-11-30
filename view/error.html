@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Oh no!</title>
+    <link rel="stylesheet" href="/static/stylesheet.css" />
+</head>
+
+<body>
+    {% include 'header.html' %}
+    <div class="content-wrapper">
+        <h1>Oops! Something went wrong.</h1>
+        <br />
+        <div>{{error_message}}</div>
+    </div>
+    <br />
+    {% include 'footer.html' %}
+</body>
+
+</html>

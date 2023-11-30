@@ -1,0 +1,54 @@
+<!-- {"user_name": user.user_name, "user_email": user.user_email, "user_phone": user.user_phone, "score": user.score, "classrooms": classrooms, "admin_classrooms": admin_classrooms} -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>MUNCH</title>
+    <link rel="stylesheet" href="/static/stylesheet.css" />
+</head>
+
+<body>
+    {% include 'header.html' %}
+    <div class="content-wrapper">
+        {% if name == None: %}
+        <h1>User not found.</h1>
+        {% else %}
+        <h1>{{name}}</h1>
+        Email: {{email}}<br>
+        Phone: {{phone}}<br>
+        Score: {{score}}<br>
+        Classrooms: {{classrooms}}<br>
+        Administrating: {{admin_classrooms}}
+        {% endif %}
+        <br>
+    </div>
+
+        <!-- Update Username Form -->
+    <form action="/update_username" method="post">
+        <input type="hidden" name="user_id" value="{{ user_id }}">
+        <label for="name">Update Username:</label>
+        <input type="text" id="name" name="name" placeholder="New username">
+        <input type="submit" value="Update Username">
+    </form>
+
+    <!-- Update Email Form -->
+    <form action="/update_email" method="post">
+        <input type="hidden" name="user_id" value="{{ user_id }}">
+        <label for="email">Update Email:</label>
+        <input type="text" id="email" name="email" placeholder="New email">
+        <input type="submit" value="Update Email">
+    </form>
+
+    <!-- Update Phone Form -->
+    <form action="/update_phone" method="post">
+        <input type="hidden" name="user_id" value="{{ user_id }}">
+        <label for="phone">Update Phone:</label>
+        <input type="text" id="phone" name="phone" placeholder="New phone number">
+        <input type="submit" value="Update Phone">
+    </form>
+
+    {% include 'footer.html' %}
+</body>
+
+</html>
