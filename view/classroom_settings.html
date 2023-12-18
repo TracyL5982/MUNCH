@@ -10,6 +10,7 @@
 <body>
     {% include 'header.html' %}
     <div class="content-wrapper">
+        <h1 id="classroomHeader">Settings for {{classroom_name}}</h1>
         <h2>Update Classroom Name</h2>
         <form id="updateNameForm" action="/classrooms/update/name" method="post">
             <input type="hidden" name="classroom_id" value="{{classroom_id}}" />
@@ -24,14 +25,41 @@
             <input type="submit" value="Update Bio" />
         </form>
 
-        <!-- TODO: add in "add admins" button -->
+        <h2>Add admins</h2>
+        <form action="/classrooms/admin" method="post">
+            <input type="hidden" name="classroom_id" value="{{classroom_id}}" />
+            User names (comma-separated):
+            <input type="text" name="admin_names" required /><br />
+            <input type="submit" value="Add admins" />
+        </form>
+        
+        <h2>Remove Admin</h2>
+        <form action="/classrooms/remove_admin" method="post">
+            <input type="hidden" name="classroom_id" value="{{classroom_id}}" />
+            Admin's Username: <input type="text" name="admin_name" id="adminName" required /><br />
+            <input type="submit" value="Remove Admin" />
+        </form>
 
         <h2>Add users</h2>
         <form action="/classrooms/users" method="post">
             <input type="hidden" name="classroom_id" value="{{classroom_id}}" />
-            User IDs (comma-separated):
-            <input type="text" name="user_ids" required /><br />
+            User names (comma-separated):
+            <input type="text" name="user_names" required /><br />
             <input type="submit" value="Add users" />
+        </form>
+
+        <h2>Reset Student's Score</h2>
+        <form action="/classrooms/reset_score" method="post">
+            <input type="hidden" name="classroom_id" value="{{classroom_id}}" />
+            Student's Username: <input type="text" name="student_name" id="studentName" required /><br />
+            <input type="submit" value="Reset Score" />
+        </form>
+
+        <h2>Remove Student</h2>
+        <form action="/classrooms/remove_student" method="post">
+            <input type="hidden" name="classroom_id" value="{{classroom_id}}" />
+            Student's Username: <input type="text" name="student_name" id="studentName" required /><br />
+            <input type="submit" value="Remove Student" />
         </form>
 
         <h2>Delete Classroom</h2>
@@ -61,6 +89,7 @@
                 success: function (response) {
                     if (response.success) {
                         $("#classroomName").text(newName);
+                        $("#classroomHeader").text("Settings for " + newName);
                     }
                     alert(response.message);
                 },

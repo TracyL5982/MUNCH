@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 import random
 
-from model.database import Classroom, User, Match, DATABASE_NAME
+from model.database import Classroom, User, Match, user_classroom_association, DATABASE_NAME
 
 """
 classroom module for functions relating to classroom object
@@ -124,6 +124,24 @@ def get_info(classroom_id):
     finally:
         session.close()
 
+def classroom_exists(classroom_id):
+    """
+    Check if a classroom with the given classroom_id exists in the database.
+    """
+    try:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        classroom = session.query(Classroom).filter_by(classroom_id=classroom_id).first()
+
+        session.close()
+        engine.dispose()
+
+        return classroom is not None
+    except Exception as ex:
+        print(ex, file=stderr)
+        return False
+
 def create_classroom(admin_ids, classroom_name, classroom_bio):
     try:
         Session = sessionmaker(bind=engine)
@@ -151,7 +169,6 @@ def create_classroom(admin_ids, classroom_name, classroom_bio):
         admins = session.query(User).filter(User.user_id.in_(admin_ids)).all()
         for admin in admins:
             new_classroom.admins.append(admin)
-            # new_classroom.users.append(admin)
         session.commit()
 
         return {"classroom_id": new_classroom.classroom_id, "classroom_name": new_classroom.classroom_name, "classroom_bio": new_classroom.classroom_bio}
@@ -310,7 +327,7 @@ def add_admins(classroom_id, admin_ids, curr_user):
 
             session.commit()
             print(f"Admins added to Classroom {classroom_id}.")
-            ret = {"classroom_id": classroom.classroom_id, "classroom_admins": classroom.admins}
+            ret = {"classroom_id": classroom.classroom_id, "classroom_admins": classroom.admins, "new_admins": new_admins}
         else:
             print(f"No classroom found with ID {classroom_id}")
             ret = None
@@ -323,7 +340,10 @@ def add_admins(classroom_id, admin_ids, curr_user):
     finally:
         session.close()
 
-def delete_admins(classroom_id, admin_ids, curr_user):
+def delete_admin(classroom_id, admin_id, curr_user):
+    """
+    delete one admin from a classroom if they are not the only admin.
+    """
     if not check_admin(classroom_id, curr_user):
         return None
     
@@ -334,19 +354,16 @@ def delete_admins(classroom_id, admin_ids, curr_user):
         classroom = session.query(Classroom).filter(Classroom.classroom_id == classroom_id).first()
         if classroom: 
             # should never be able to remove more admins than there are currently, always need 1
-            if len(classroom.admins) < len(admin_ids):
-                return None # maybe have to close session here? 
+            if len(classroom.admins) == 1:
+                return None
 
-            removed_admins = []
-            for admin_id in admin_ids:
-                admin = session.query(User).filter(User.user_id == admin_id).first()
-                if admin in classroom.admins:
-                    classroom.admins.remove(admin)
-                    removed_admins.append(admin.user_id)
+            admin = session.query(User).filter(User.user_id == admin_id).first()
+            if admin in classroom.admins:
+                classroom.admins.remove(admin)
 
             session.commit()
-            print(f"Admins removed from Classroom {classroom_id}.")
-            ret = {"classroom_id": classroom.classroom_id, "classroom_admins": classroom.admins}
+            print(f"Admin removed from Classroom {classroom_id}.")
+            ret = {"classroom_id": classroom.classroom_id, "classroom_admins": classroom.admins, "removed_admin": admin_id}
         else:
             print(f"No classroom found with ID {classroom_id}")
             ret = None
@@ -363,7 +380,7 @@ def delete_admins(classroom_id, admin_ids, curr_user):
 def get_user_match(classroom_id, user_id):
     """
     given a user_id, returns either the user(s) 
-    they are currently matched to
+    they are currently matched to in a list of Users
     or None if there is no match yet
     """
     # check if there is currently a match
@@ -378,13 +395,25 @@ def get_user_match(classroom_id, user_id):
             return None
 
         print(len(classroom.matches))
+        m = []
         for match in classroom.matches:
             print(match.user1_id)
             if match.user1.user_id == user_id:
-                return match.user2
-            elif match.user2.user_id == user_id:
-                return match.user1
-        # TODO: add logic for the 3-pair edge case
+                m.append(match.user2)
+                if match.user3:
+                    m.append(match.user3)
+                return m
+            
+            if match.user2.user_id == user_id:
+                m.append(match.user1)
+                if match.user3:
+                    m.append(match.user3)
+                return m
+
+            if match.user3 and match.user3.user_id == user_id:
+                m.append(match.user1)
+                m.append(match.user2)
+                return m
 
         return None
 
@@ -422,10 +451,21 @@ def get_current_match(classroom_id, curr_user):
             return None
 
         match = classroom.matches
-        matches = [(m.user1.user_name, m.user2.user_name) for m in match]
-        # TODO: add logic for the 3-pair edge case
+        matches = []
+        for m in match:
+            m_dict = {}
+            m_dict['match_id'] = m.match_id
+            m_dict['complete'] = m.complete
+            m_dict['user1_name'] = m.user1.user_name
+            m_dict['user1_id'] = m.user1.user_id
+            m_dict['user2_name'] = m.user2.user_name
+            m_dict['user2_id'] = m.user2.user_id
+            if m.user3:
+                m_dict['user3_name'] = m.user3.user_name
+                m_dict['user3_id'] = m.user3.user_id
+            matches.append(m_dict)
 
-        if matches:
+        if matches: # a list of dicts
             print(f"matches for {classroom_id}: {matches}")
             return matches
         else:
@@ -478,20 +518,98 @@ def make_new_match(classroom_id, curr_user):
             pairs.append(pair)
             start = 3
 
+        # if odd, the first pair will be the 3 group one
+
         for i in range(start, len(users) - 1, 2):
-            pair = (users[i], users[i + 1], "")
+            pair = (users[i], users[i + 1])
             pairs.append(pair)
 
         for pair in pairs:
-            new_match = Match(classroom_id=classroom_id, user1_id=pair[0].user_id, user2_id=pair[1].user_id)
+            if len(pair) == 3:
+                new_match = Match(classroom_id=classroom_id, user1_id=pair[0].user_id, user2_id=pair[1].user_id, user3_id=pair[2].user_id)
+            else:
+                new_match = Match(classroom_id=classroom_id, user1_id=pair[0].user_id, user2_id=pair[1].user_id)
             session.add(new_match)
 
         session.commit()
 
-        pairsNames = []
+        matches = []
         for pair in pairs:
-            pairsNames.append([pair[0].user_name, pair[1].user_name])
-        return pairsNames
+            new_match = session.query(Match).filter_by(
+                classroom_id=classroom_id,
+                user1_id=pair[0].user_id,
+                user2_id=pair[1].user_id
+            ).first()
+            match = {}
+            match['match_id'] = new_match.match_id
+            match['complete'] = False
+            match['user1_name'] = pair[0].user_name
+            match['user1_id'] = pair[0].user_id
+            match['user1_email'] = pair[0].user_email
+            match['user2_name'] = pair[1].user_name
+            match['user2_id'] = pair[1].user_id
+            match['user2_email'] = pair[1].user_email
+            if len(pair) == 3:
+                match['user3_name'] = pair[2].user_name
+                match['user3_id'] = pair[2].user_id
+                match['user3_email'] = pair[2].user_email
+            matches.append(match)
+
+        return matches
+
+    except Exception as ex:
+        print(ex, file=stderr)
+        exit(1)
+    finally:
+        session.close()
+
+def mark_match_complete(classroom_id, curr_user, match_id, user1_id, user2_id, user3_id=None):
+    if not check_admin(classroom_id, curr_user):
+        return None
+
+    # check if there is currently a match
+    try:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        # verify that classroom exists
+        classroom = session.query(Classroom).filter(Classroom.classroom_id == classroom_id).first()
+        if not classroom:
+            print(f"No classroom found with ID {classroom_id}")
+            return None
+        
+        # if there are fewer than 2 users, return
+        if len(classroom.users) < 2:
+            print("There must be at least 2 users to make a match.")
+            return None
+
+        # add 1 for score for each of the users in the match , also if there's 3 in the match
+        user1 = session.query(User).filter(User.user_id == user1_id).first()
+        if not user1 or user1 not in classroom.users:
+            print(f"user {user1_id} not found")
+            return None
+        increment_user_classroom_score(classroom_id, user1.user_id, curr_user)
+
+        user2 = session.query(User).filter(User.user_id == user2_id).first()
+        if not user2 or user2 not in classroom.users:
+            print(f"user {user2_id} not found")
+            return None
+        increment_user_classroom_score(classroom_id, user2.user_id, curr_user)
+
+        if user3_id:
+            user3 = session.query(User).filter(User.user_id == user3_id).first()
+            if not user3 or user3 not in classroom.users:
+                print(f"user {user3_id} not found")
+                return None
+            increment_user_classroom_score(classroom_id, user3.user_id, curr_user)
+
+        match = session.query(Match).filter(Match.match_id == match_id).first()
+        if not match:
+            print(f"match {match_id} not found")
+            return None
+        match.complete = True
+
+        session.commit()
 
     except Exception as ex:
         print(ex, file=stderr)
@@ -558,7 +676,8 @@ def get_all_users(classroom_id):
 
 def add_user(classroom_id, user_id):
     """
-    TEMPORARILY HERE while join_classroom admin feature not implemented
+    add an individual user to the classroom.
+    for a user to add themselves.
     """
     try:
         Session = sessionmaker(bind=engine)
@@ -599,6 +718,9 @@ def add_users(classroom_id, user_ids, curr_user):
         # input validation for class
 
         classroom = session.query(Classroom).filter(Classroom.classroom_id == classroom_id).first()
+        if not classroom:
+            print(f"{classroom_id} is not a valid classroom id")
+            return None
 
         # Check if all user_ids correspond to a real user
         real_users = session.query(User.user_id).filter(User.user_id.in_(user_ids)).all()
@@ -633,13 +755,143 @@ def add_users(classroom_id, user_ids, curr_user):
         session.close()
 
 
+def increment_user_classroom_score(classroom_id, user_id, curr_user):
+    try:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        if not check_admin(classroom_id, curr_user):
+            return None
+
+        # input validation
+        classroom = session.query(Classroom).filter(Classroom.classroom_id == classroom_id).first()
+        if not classroom:
+            print(f"{classroom_id} is not a valid classroom id")
+            return None
+        
+        user = session.query(User).filter(User.user_id == user_id).first()
+        if not user or user not in classroom.users:
+            print(f"{user_id} is not a valid user id, or they are not in this classroom")
+            return None
+        
+        association = session.execute(
+            user_classroom_association.select().where(
+                (user_classroom_association.c.user_id == user_id) &
+                (user_classroom_association.c.classroom_id == classroom_id)
+            )
+        ).fetchone()
+        
+        if association:
+            new_score = association.user_classroom_score + 1
+            update_stmt = user_classroom_association.update().where(
+                (user_classroom_association.c.user_id == user_id) &
+                (user_classroom_association.c.classroom_id == classroom_id)
+            ).values(user_classroom_score=new_score)
+            session.execute(update_stmt)
+        
+        session.commit()
+
+    except Exception as ex:
+        print(ex, file=stderr)
+        exit(1)
+    finally:
+        session.close()
+
+
+def reset_user_classroom_score(classroom_id, user_id, curr_user):
+    try:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        if not check_admin(classroom_id, curr_user):
+            return None
+
+        # input validation
+        classroom = session.query(Classroom).filter(Classroom.classroom_id == classroom_id).first()
+        if not classroom:
+            print(f"{classroom_id} is not a valid classroom id")
+            return None
+        
+        user = session.query(User).filter(User.user_id == user_id).first()
+        if not user or user not in classroom.users:
+            print(f"{user_id} is not a valid user id, or they are not in this classroom")
+            return None
+        
+        association = session.execute(
+            user_classroom_association.select().where(
+                (user_classroom_association.c.user_id == user_id) &
+                (user_classroom_association.c.classroom_id == classroom_id)
+            )
+        ).fetchone()
+        
+        if association:
+            new_score = 0
+            update_stmt = user_classroom_association.update().where(
+                (user_classroom_association.c.user_id == user_id) &
+                (user_classroom_association.c.classroom_id == classroom_id)
+            ).values(user_classroom_score=new_score)
+            session.execute(update_stmt)
+
+        session.commit()
+
+    except Exception as ex:
+        print(ex, file=stderr)
+        exit(1)
+    finally:
+        session.close()
+
+
+def get_user_classroom_score(classroom_id, user_id):
+    """
+    gets the user's current classroom score.
+    """
+    try:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        # input validation
+        classroom = session.query(Classroom).filter(Classroom.classroom_id == classroom_id).first()
+        if not classroom:
+            print(f"{classroom_id} is not a valid classroom id")
+            return None
+        
+        user = session.query(User).filter(User.user_id == user_id).first()
+        if not user or user not in classroom.users:
+            print(f"{user_id} is not a valid user id, or they are not in this classroom")
+            return None
+
+        # actual SQL query because otherwise can't access table thru SQLAlchemy
+        score_row = session.execute(
+            user_classroom_association.select().where(
+                (user_classroom_association.c.user_id == user_id) &
+                (user_classroom_association.c.classroom_id == classroom_id)
+            )
+        ).fetchone()
+
+        session.close()
+
+        if score_row:
+            score = score_row.user_classroom_score
+            print(f"User {user_id} score: {score}")
+            return score
+        else:
+            print(f"No score found for user {user_id} in classroom {classroom_id}")
+            return None
+
+    except Exception as ex:
+        print(ex, file=stderr)
+        exit(1)
+    finally:
+        session.close()
+
+
 def remove_user(classroom_id, user_id, curr_user):
     """
     removes user from classroom
     """
     # only possible if you are admin OR the user
     if not check_admin(classroom_id, curr_user) and user_id != curr_user:
-        return None # or is there something better to return
+        return None
 
     try:
         Session = sessionmaker(bind=engine)

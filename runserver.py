@@ -1,4 +1,3 @@
-# from sys impo
 import sys
 from lunchtag import app
 import argparse

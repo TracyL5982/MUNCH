@@ -1,41 +1,47 @@
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <title>MUNCH</title>
     <link rel="stylesheet" href="../static/stylesheet.css" />
-</head>
+  </head>
 
-<body>
+  <body>
     {% include 'header.html' %}
     <div class="content-wrapper">
-        <h1>Classrooms</h1>
-        <div class="box">
-            {% for classroom in classrooms %}
-            <div>
-                <a href="classrooms?classroom_id={{classroom[0]}}">{{classroom[1]}}</a>
-                <br />
-                {{classroom[2]}}
-                <br />
-                <br />
-                <a href="classrooms?classroom_id={{classroom[0]}}&user_id={{current_user.user_id}}">Join this
-                    classroom</a>
-            </div>
-            {% endfor %}
+      <h1>Classrooms</h1>
+      <div class="box">
+        {% for classroom in classrooms %}
+        <div>
+          <h2>
+            <a href="classrooms?classroom_id={{classroom[0]}}"
+              >{{classroom[1]}}</a
+            >
+          </h2>
+          {{classroom[2]}}
+          <br />
+          <br />
+          <a
+            href="join-classroom?classroom_id={{classroom[0]}}&user_id={{current_user.user_id}}"
+            >Join this classroom</a
+          >
         </div>
+        {% endfor %}
+      </div>
     </div>
 
     <div class="content-wrapper">
+      <div class="color-card">
         <h2>Create classroom</h2>
         <form action="/classrooms/create" method="post">
-            Admin IDs (comma-separated):
-            <input type="text" name="admin_ids" required /><br />
-            Classroom Name: <input type="text" name="classroom_name" required /><br />
-            Classroom Bio: <input type="text" name="classroom_bio" /><br />
-            <input type="submit" value="Create Classroom" />
+          Admin Usernames (comma-separated):
+          <input type="text" name="admin_usernames" required /><br />
+          Classroom Name:
+          <input type="text" name="classroom_name" required /><br />
+          Classroom Bio: <input type="text" name="classroom_bio" /><br />
+          <input type="submit" value="Create Classroom" />
         </form>
+      </div>
     </div>
     {% include 'footer.html' %}
-</body>
-
+  </body>
 </html>

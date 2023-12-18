@@ -19,7 +19,7 @@
 
     {% if is_admin %}
     <br />
-    <a href="/classrooms/settings?classroom_id={{classroom_id}}">
+    <a href="/classrooms/settings?classroom_id={{classroom_id}}&classroom_name={{classroom_info['classroom_name']}}">
       Classroom settings
     </a>
     <br />
@@ -39,7 +39,6 @@
             <td>
               <a href="users?user_id={{user['user_id']}}">{{user['user_name']}}</a>
             </td>
-            <td>{{user['score']}}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -48,31 +47,50 @@
 
     <div id="student table">
       <h2>Students:</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Username</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for user in users %}
-          <tr id="{{user['user_id']}}">
-            <td>
-              <a href="users?user_id={{user['user_id']}}">{{user['user_name']}}</a>
-            </td>
-            <td>{{user['score']}}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      {% if not users %}
+        This classroom currently has no users.
+      {% else %}
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr id="{{user['user_id']}}">
+              <td>
+                <a href="users?user_id={{user['user_id']}}">{{user['user_name']}}</a>
+              </td>
+              <td>{{user['score']}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
     </div>
 
     <br />
 
+    {% if is_member %}
+      You are currently matched with:
+      {% if match %}
+        <a href="users?user_id={{match[0]['user_id']}}">{{match[0]['user_name']}}</a>
+        {% if is_3pair %}
+        & <a href="users?user_id={{match[1]['user_id']}}">{{match[1]['user_name']}}</a>
+        {% endif %}
+      {% else %}
+        No match yet
+      {% endif %}
+      <br />
+      <br />
+
+    {% endif %}
+
     {% if is_admin %}
       <a href="/classrooms/admin/match?classroom_id={{classroom_id}}">
-        Current Match
+        Current Matches
       </a>
       <br />
       <br />
@@ -80,14 +98,22 @@
         <input type="submit" value="Create new match" />
       </form>
 
-    {% else %}
-      Current Match:
-      {% if match %}
-        <a href="users?user_id={{match['user_id']}}">{{match['user_name']}}</a>
-      {% else %}
-        No match yet
-      {% endif %}
+    {% endif %}
 
+    {% if is_admin %}
+    <br>
+      <form action="/classrooms/admin/notify?classroom_id={{classroom_id}}" method="post" id="sendNotification">
+        <input type="submit" value="Send notification" />
+      </form>
+    {% endif %}
+
+    {% if is_member %}
+    {% if not is_admin %}
+    <form action="/classrooms/leave" method="post">
+      <input type="hidden" name="classroom_id" value="{{ classroom_id }}">
+      <input type="submit" value="Leave Classroom">
+    </form>
+    {% endif %}
     {% endif %}
 
   </div>
@@ -153,6 +179,20 @@
         },
         error: function (xhr, status, error) {
           alert("Error deleting classroom: " + xhr.responseText);
+        }
+      });
+    });
+
+    $("#sendNotification").submit(function (event) {
+      event.preventDefault();
+      $.ajax({
+        url: "/classrooms/admin/notify?classroom_id={{classroom_id}}",
+        type: 'POST',
+        success: function (response) {
+          alert("Sent email notification!");
+        },
+        error: function (xhr, status, error) {
+          alert("Error sending notification: " + xhr.responseText);
         }
       });
     });

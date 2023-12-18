@@ -2,53 +2,70 @@
 
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <title>MUNCH</title>
     <link rel="stylesheet" href="/static/stylesheet.css" />
-</head>
+  </head>
 
-<body>
+  <body>
     {% include 'header.html' %}
     <div class="content-wrapper">
+      <div class="color-card">
         {% if name == None: %}
         <h1>User not found.</h1>
         {% else %}
         <h1>{{name}}</h1>
-        Email: {{email}}<br>
-        Phone: {{phone}}<br>
-        Score: {{score}}<br>
-        Classrooms: {{classrooms}}<br>
-        Administrating: {{admin_classrooms}}
-        {% endif %}
-        <br>
+        Email: {{email}}<br />
+        Phone: {{phone}}<br />
+        Classrooms: {{classrooms}}<br />
+        Administrating: {{admin_classrooms}} {% endif %}
+        <br />
+        <br />
+      </div>
+      {% if current_user.is_authenticated and current_user.user_id == user_id %}
+      <h1>Settings</h1>
+      <!-- Update Username Form -->
+      <h2>Update Username</h2>
+      <form action="/update_username" method="post">
+        <input type="hidden" name="user_id" value="{{ user_id }}" />
+        New Username:
+        <input
+          type="text"
+          id="name"
+          name="name"
+          required
+        /><br />
+        <input type="submit" value="Update Username" />
+      </form>
+
+      <!-- Update Email Form -->
+      <h2>Update Email</h2>
+      <form action="/update_email" method="post">
+        <input type="hidden" name="user_id" value="{{ user_id }}" />
+        New Email:
+        <input
+          type="text"
+          id="email"
+          name="email"
+        /><br />
+        <input type="submit" value="Update Email" />
+      </form>
+
+      <!-- Update Phone Form -->
+      <h2>Update Phone Number</h2>
+      <form action="/update_phone" method="post">
+        <input type="hidden" name="user_id" value="{{ user_id }}" />
+        New Phone Number:
+        <input
+          type="text"
+          id="phone"
+          name="phone"
+        /><br />
+        <input id="button" type="submit" value="Update Phone" />
+      </form>
+      {% endif %}
     </div>
 
-        <!-- Update Username Form -->
-    <form action="/update_username" method="post">
-        <input type="hidden" name="user_id" value="{{ user_id }}">
-        <label for="name">Update Username:</label>
-        <input type="text" id="name" name="name" placeholder="New username">
-        <input type="submit" value="Update Username">
-    </form>
-
-    <!-- Update Email Form -->
-    <form action="/update_email" method="post">
-        <input type="hidden" name="user_id" value="{{ user_id }}">
-        <label for="email">Update Email:</label>
-        <input type="text" id="email" name="email" placeholder="New email">
-        <input type="submit" value="Update Email">
-    </form>
-
-    <!-- Update Phone Form -->
-    <form action="/update_phone" method="post">
-        <input type="hidden" name="user_id" value="{{ user_id }}">
-        <label for="phone">Update Phone:</label>
-        <input type="text" id="phone" name="phone" placeholder="New phone number">
-        <input type="submit" value="Update Phone">
-    </form>
-
     {% include 'footer.html' %}
-</body>
-
+  </body>
 </html>

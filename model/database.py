@@ -13,7 +13,8 @@ Base = declarative_base()
 
 user_classroom_association = Table('user_classroom', Base.metadata,
     Column('user_id', Integer, ForeignKey('user.user_id')),
-    Column('classroom_id', Integer, ForeignKey('classroom.classroom_id'))
+    Column('classroom_id', Integer, ForeignKey('classroom.classroom_id')),
+    Column('user_classroom_score', Integer, default=0)
 )
 
 admin_classroom_association = Table('admin_classroom', Base.metadata,
@@ -27,7 +28,6 @@ class User(UserMixin, Base):
     user_name = Column(String)
     user_email = Column(String)
     user_phone = Column(String)
-    score = Column(Integer, default=0)
     password_hash = Column(String)
 
     classrooms = relationship("Classroom", secondary=user_classroom_association, back_populates="users")
@@ -65,7 +65,10 @@ class Match(Base):
     classroom_id = Column(Integer, ForeignKey('classroom.classroom_id'))
     user1_id = Column(Integer, ForeignKey('user.user_id'))
     user2_id = Column(Integer, ForeignKey('user.user_id'))
+    user3_id = Column(Integer, ForeignKey('user.user_id'))
+    complete = Column(Boolean, default=False)
 
     classroom = relationship("Classroom", back_populates="matches")
     user1 = relationship("User", foreign_keys=[user1_id])
     user2 = relationship("User", foreign_keys=[user2_id])
+    user3 = relationship("User", foreign_keys=[user3_id])

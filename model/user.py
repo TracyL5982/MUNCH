@@ -65,7 +65,7 @@ def get_user_info(user_id):
             return {"user_name": user.user_name,
                     "user_email": user.user_email,
                     "user_phone": user.user_phone,
-                    "score": user.score, "classrooms": classrooms,
+                    "classrooms": classrooms,
                     "admin_classrooms": admin_classrooms,
                     "user_id": user.user_id}
 
@@ -80,7 +80,7 @@ def create_user(name, email, phone, password):
         Session = sessionmaker(bind=engine)
         session = Session()
 
-        #user name and email is required to create a new user, phone optional?
+        #user name and email is required to create a new user, phone optional
         if not name :
             print ("Need to enter a user name to create a new user")
             session.close()
@@ -225,11 +225,3 @@ def delete_user(user_id):
         exit(1)
     finally:
         session.close()
-
-
-def _test(user_id):
-    print(get_user_info(user_id))
-
-if __name__ == '__main__':
-    _test(0)
-
